@@ -98,7 +98,6 @@ export const addSecurityMetaTags = () => {
         font-src 'self' *;
         worker-src 'self' blob: *;
         object-src 'none';
-        frame-ancestors 'self';
       `.replace(/\s+/g, ' ').trim()
     },
     {

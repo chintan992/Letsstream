@@ -171,6 +171,7 @@ const UserListsSidebar = ({
                 minimizedSections.history ? 'h-0 opacity-0' : 'opacity-100'
               }`}>
                 <ListSection
+                  title="Watch History"
                   items={watchHistory}
                   emptyMessage="No watch history yet"
                   onItemClick={handleListItemClick}
@@ -197,6 +198,7 @@ const UserListsSidebar = ({
                 minimizedSections.watchlist ? 'h-0 opacity-0' : 'opacity-100'
               }`}>
                 <ListSection
+                  title="Watchlist"
                   items={watchlist}
                   emptyMessage="Your watchlist is empty"
                   onItemClick={handleListItemClick}
@@ -212,8 +214,8 @@ const UserListsSidebar = ({
                 isMinimized={minimizedSections.favorites}
                 icon={
                   <svg className="w-5 h-5 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 0 0 0 6.364L12 20.364l7.682-7.682a4.5 4.5 0 0 0 -6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 0 0 -6.364 0z" />
                   </svg>
                 }
                 title="Favorites"
@@ -223,6 +225,7 @@ const UserListsSidebar = ({
                 minimizedSections.favorites ? 'h-0 opacity-0' : 'opacity-100'
               }`}>
                 <ListSection
+                  title="Favorites"
                   items={favorites}
                   emptyMessage="No favorites added"
                   onItemClick={handleListItemClick}

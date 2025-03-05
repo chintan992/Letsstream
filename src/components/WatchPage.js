@@ -64,9 +64,10 @@ const WatchPage = () => {
   const [similar, setSimilar] = useState([]);
   const [currentEpisode, setCurrentEpisode] = useState(null);
   const [episodeLayout, setEpisodeLayout] = useState('list'); // 'list' or 'grid'
+  const [showBackgroundPoster, setShowBackgroundPoster] = useState(false);
 
   const buttonClasses = {
-    base: `flex items-center gap-2 p-4 rounded-full shadow-lg transition-all duration-300
+    base: `flex items-center gap-1.5 sm:gap-2 xs:gap-1 p-3 sm:p-4 xs:p-2 rounded-full shadow-lg transition-all duration-300
       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#02c39a] relative z-[60]`,
     default: `bg-[#02c39a] text-white hover:bg-[#00a896] transform hover:scale-105
       hover:shadow-xl active:scale-95`,
@@ -335,7 +336,9 @@ const WatchPage = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowQuickActions(window.scrollY > 200);
+      const scrollPosition = window.scrollY;
+      setShowBackgroundPoster(scrollPosition > 100);
+      setShowQuickActions(scrollPosition > 200);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -450,45 +453,139 @@ const WatchPage = () => {
 
   return (
     <motion.div 
-      className={`min-h-screen ${isDarkMode ? 'bg-[#0a1118] text-gray-100' : `${lightModeStyles.containerBg} ${lightModeStyles.textColor}`} px-4 sm:px-6 md:px-8`}
+      className={`min-h-screen relative ${isDarkMode ? 'bg-[#0a1118] text-gray-100' : `${lightModeStyles.containerBg} ${lightModeStyles.textColor}`}`}
       initial="initial"
       animate="animate"
       exit="exit"
       variants={pageTransition}
     >
-      <ErrorBoundary>
-        {/* New component: Suggest using Brave Browser */}
-        <UseBrave />
+      {/* Background Poster */}
+      {item?.poster_path && (
         <motion.div 
-          ref={contentRef} 
-          className={`container mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-6 max-w-[1920px] ${isDarkMode ? '' : lightModeStyles.cardBg}`}
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
+          className={`fixed inset-0 z-0 transition-opacity duration-500 ${
+            showBackgroundPoster ? 'opacity-70' : 'opacity-0'
+          }`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showBackgroundPoster ? 0.7 : 0 }}
+          style={{
+            background: `linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(10,17,24,0.9) 50%, rgba(10,17,24,1) 100%)`,
+          }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8">
-            <div className="md:col-span-2 space-y-2 sm:space-y-4">
+          <motion.img
+            src={`https://image.tmdb.org/t/p/original${item.backdrop_path || item.poster_path}`}
+            alt=""
+            className="w-full h-full object-cover object-center blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showBackgroundPoster ? 1 : 0, blur: showBackgroundPoster ? 10 : 0 }}
+            transition={{ duration: 0.5 }}
+          />
+        </motion.div>
+      )}
+
+      {/* Main Content */}
+      <div className="relative z-10 px-2 sm:px-4 md:px-6 lg:px-8">
+        <ErrorBoundary>
+          <UseBrave />
+          <motion.div 
+            ref={contentRef} 
+            className="container mx-auto px-2 xs:px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-6 max-w-[1920px]"
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {/* Update the poster and title section for better mobile display */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
+              <div className="md:col-span-2 space-y-2 sm:space-y-4">
+                <motion.div 
+                  className="mb-2 sm:mb-4"
+                  variants={itemVariants}
+                >
+                  <div className="flex flex-col xs:flex-row gap-4 sm:gap-6">
+                    {/* Poster */}
+                    <div className="flex-shrink-0 w-full xs:w-32 sm:w-40 md:w-48 mx-auto xs:mx-0 max-w-[180px] xs:max-w-none">
+                      <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg dark:shadow-black/50">
+                        <img
+                          src={`https://image.tmdb.org/t/p/w500${item?.poster_path}`}
+                          alt={item?.title || item?.name}
+                          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.src = '/fallback-poster.jpg';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      </div>
+                    </div>
+
+                    {/* Title and Metadata */}
+                    <div className="flex-1 space-y-2 sm:space-y-3 text-center xs:text-left">
+                      <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white/90 line-clamp-2">
+                        {item?.title || item?.name}
+                      </h1>
+                      <div className="flex flex-wrap items-center justify-center xs:justify-start gap-2 sm:gap-3 text-xs sm:text-sm text-white/60">
+                        {(item?.release_date || item?.first_air_date) && (
+                          <span className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {new Date(item?.release_date || item?.first_air_date).getFullYear()}
+                          </span>
+                        )}
+                        {item?.vote_average ? (
+                          <span className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.396-.902 1.506-.902 1.902 0l1.286 2.93a1 1 0 00.832.604l3.018.33c.98.107 1.373 1.361.625 2.04l-2.3 2.112a1 1 0 00-.318.981l.669 2.983c.219.97-.857 1.73-1.726 1.218L10 14.147l-2.736 1.98c-.87.512-1.945-.248-1.726-1.218l.669-2.983a1 1 0 00-.318-.981l-2.3-2.112c-.748-.679-.355-1.933.625-2.04l3.018-.33a1 1 0 00.832-.604l1.286-2.93z" />
+                          </svg>
+                          {item.vote_average.toFixed(1)}
+                        </span>
+                      ) : null}
+                      {(item?.runtime || item?.episode_run_time?.[0]) ? (
+                        <span className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {item?.runtime || item?.episode_run_time?.[0]} min
+                        </span>
+                      ) : null}
+                    </div>
+                    {item?.genres && (
+                      <div className="flex flex-wrap justify-center xs:justify-start gap-1.5 sm:gap-2">
+                        {item.genres.map((genre) => (
+                          <span 
+                            key={genre.id}
+                            className="px-2 py-1 text-xs sm:text-sm bg-white/10 rounded-md text-white/80"
+                          >
+                            {genre.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+
               <motion.div 
-                className="mb-1 sm:mb-4 relative z-[70]"
+                className="mb-2 sm:mb-4 relative z-[70]"
                 variants={itemVariants}
                 whileHover={{ scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 bg-black/40 
-                  backdrop-blur-sm rounded-lg p-1 sm:p-2 border border-white/10">
-                  <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1 sm:py-1.5 
-                    bg-white/5 rounded-md">
+                <div className="flex flex-wrap items-center justify-between gap-1 sm:gap-3 bg-black/40 
+                  backdrop-blur-sm rounded-lg p-1.5 sm:p-2 border border-white/10">
+                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 
+                    bg-white/5 rounded-md touch-manipulation">
                     <svg className="w-3 h-3 sm:w-4 sm:h-4 text-[#02c39a]" 
                       viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2z" />
                     </svg>
-                    <span className="text-[11px] leading-none sm:text-sm text-white/80 font-medium 
-                      hidden xs:inline">Player Source</span>
-                    <span className="text-[11px] leading-none sm:text-sm text-white/80 font-medium 
-                      xs:hidden">Source</span>
+                      <span className="text-[10px] xs:text-[11px] sm:text-sm text-white/80 font-medium 
+                      hidden xs:inline leading-none">Player Source</span>
+                    <span className="text-[10px] xs:text-[11px] sm:text-sm text-white/80 font-medium 
+                      xs:hidden leading-none">Source</span>
                   </div>
-                  <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-[100px] sm:min-w-[120px]">
                     <SourceSelector
                       videoSource={videoSource}
                       handleSourceChange={handleSourceChange}
@@ -502,7 +599,7 @@ const WatchPage = () => {
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-2 py-1 bg-white/5 rounded-lg text-white/60 hover:text-white/90 transition-colors"
+                      className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-white/5 rounded-lg text-white/60 hover:text-white/90 transition-colors text-xs sm:text-sm"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -563,7 +660,7 @@ const WatchPage = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex items-center gap-2 bg-black/20 rounded-lg px-2 py-1"
+                            className="flex items-center gap-1.5 sm:gap-2 bg-black/20 rounded-lg px-1.5 sm:px-2 py-1"
                           >
                             <span className="text-xs sm:text-sm text-white/60">Season:</span>
                             <select
@@ -571,8 +668,9 @@ const WatchPage = () => {
                               onChange={(e) => handleInputChange({
                                 target: { name: 'season', value: e.target.value }
                               })}
-                              className="bg-transparent text-white/90 text-sm sm:text-base font-medium 
-                                outline-none cursor-pointer hover:text-[#02c39a] transition-colors py-1 px-2"
+                              className="bg-transparent text-white/90 text-xs sm:text-sm font-medium 
+                                outline-none cursor-pointer hover:text-[#02c39a] transition-colors py-1 px-1.5 sm:px-2 
+                                touch-manipulation"
                             >
                               {seasons.map((season) => (
                                 <option 
@@ -587,10 +685,10 @@ const WatchPage = () => {
                           </motion.div>
                         )}
                       </AnimatePresence>
-                      <div className="flex items-center gap-2 bg-black/20 rounded-lg p-1">
+                      <div className="flex items-center gap-1 sm:gap-2 bg-black/20 rounded-lg p-1">
                         <button
                           onClick={() => setEpisodeLayout('list')}
-                          className={`p-1.5 rounded-md transition-all duration-200 ${
+                          className={`p-2 sm:p-1.5 rounded-md transition-all duration-200 touch-manipulation ${
                             episodeLayout === 'list'
                               ? 'bg-[#02c39a] text-white'
                               : 'text-white/60 hover:text-white/90'
@@ -604,7 +702,7 @@ const WatchPage = () => {
                         </button>
                         <button
                           onClick={() => setEpisodeLayout('grid')}
-                          className={`p-1.5 rounded-md transition-all duration-200 ${
+                          className={`p-2 sm:p-1.5 rounded-md transition-all duration-200 touch-manipulation ${
                             episodeLayout === 'grid'
                               ? 'bg-[#02c39a] text-white'
                               : 'text-white/60 hover:text-white/90'
@@ -634,7 +732,7 @@ const WatchPage = () => {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 20 }}
-                          className="min-w-[300px] p-1.5 sm:p-2"
+                  className="min-w-0 sm:min-w-[300px] p-1.5 sm:p-2"
                         >
                           <EpisodeNavigation
                             episodes={episodes}
@@ -674,8 +772,8 @@ const WatchPage = () => {
               {item && (
                 <motion.div
                   variants={itemVariants}
-                  className={`mt-2 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
-                    shadow-md sm:shadow-lg dark:shadow-black/50 p-2 sm:p-6`}
+                  className={`mt-3 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
+                    shadow-md sm:shadow-lg dark:shadow-black/50 p-3 sm:p-6`}
                   whileHover={{ scale: 1.005 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
@@ -709,8 +807,8 @@ const WatchPage = () => {
                     />
                   </div>
                 </div>
-                <div className="block sm:hidden lg:block xl:hidden">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg p-4">
+                <div className="block lg:hidden">
+                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-4 gap-2 sm:gap-4 bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg p-2 sm:p-4">
                     {recommendations.slice(0, 6).map((item) => (
                       <div key={item.id} 
                         className="flex flex-col items-center group hover:scale-105 transition-transform duration-200"
@@ -720,7 +818,7 @@ const WatchPage = () => {
                           <img
                             src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
                             alt={item.title || item.name}
-                            className="w-24 h-36 object-cover transform group-hover:scale-110 transition-transform duration-200"
+                            className="w-full xs:w-24 h-36 object-cover transform group-hover:scale-110 transition-transform duration-200"
                           />
                         </div>
                         <p className="text-center text-sm mt-2 text-gray-200 group-hover:text-[#02c39a] transition-colors">
@@ -741,7 +839,7 @@ const WatchPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] p-4 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
+              className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
             >
               <QuickActions
                 isInWatchlist={isInWatchlist}
@@ -754,18 +852,72 @@ const WatchPage = () => {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-6 left-4 sm:left-6 z-[60]">
+          <div className="fixed bottom-4 sm:bottom-6 left-2 sm:left-6 z-[60] flex flex-col gap-2">
+          <motion.button
+            onClick={handleWatchlistToggle}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`${buttonClasses.base} ${isInWatchlist
+              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
+              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
+                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
+            aria-label="Toggle Watchlist"
+          >
+            <div className="relative flex items-center justify-center">
+              <motion.svg
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d={isInWatchlist
+                    ? "M6 18L18 6M6 6l12 12"
+                    : "M12 4v16m8-8H4"} />
+              </motion.svg>
+              <span className="hidden sm:inline ml-2 whitespace-nowrap">
+                {isInWatchlist ? 'Remove Watchlist' : 'Add Watchlist'}
+              </span>
+            </div>
+          </motion.button>
+
+          <motion.button
+            onClick={handleFavoritesToggle}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`${buttonClasses.base} ${isInFavorites
+              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
+              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
+                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
+            aria-label="Toggle Favorites"
+          >
+            <div className="relative flex items-center justify-center">
+              <motion.svg
+                className="w-5 h-5 sm:w-6 sm:h-6"
+                fill={isInFavorites ? "currentColor" : "none"}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </motion.svg>
+              <span className="hidden sm:inline ml-2 whitespace-nowrap">
+                {isInFavorites ? 'Remove Favorites' : 'Add Favorites'}
+              </span>
+            </div>
+          </motion.button>
+
           <motion.button
             onClick={() => setShowUserLists(true)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`${buttonClasses.base} ${showUserLists 
-              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]' 
-              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]' 
-                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50`}
+            className={`${buttonClasses.base} ${showUserLists
+              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
+              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
+                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
             aria-label="Open user lists"
           >
-            <div className="relative flex items-center">
+            <div className="relative flex items-center justify-center">
               <motion.svg
                 animate={{ rotate: showUserLists ? 90 : 0 }}
                 className="w-5 h-5 sm:w-6 sm:h-6"
@@ -804,7 +956,8 @@ const WatchPage = () => {
           handleListItemClick={handleListItemClick}
         />
       </ErrorBoundary>
-    </motion.div>
+    </div>
+  </motion.div>
   );
 };
 
