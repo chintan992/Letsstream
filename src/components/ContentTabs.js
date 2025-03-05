@@ -20,7 +20,7 @@ const ContentTabs = ({
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-white shadow'
+            ? 'bg-[#02c39a] text-black shadow'
             : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
         }>
           Overview
@@ -28,7 +28,7 @@ const ContentTabs = ({
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-white shadow'
+            ? 'bg-[#02c39a] text-black shadow'
             : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
         }>
           Cast & Crew
@@ -36,7 +36,7 @@ const ContentTabs = ({
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-white shadow'
+            ? 'bg-[#02c39a] text-black shadow'
             : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
         }>
           Reviews
@@ -45,7 +45,7 @@ const ContentTabs = ({
       <Tab.Panels className="mt-4">
         <Tab.Panel className="space-y-4">
           <div className="prose prose-invert max-w-none">
-            <p className={`text-gray-300 ${!showFullOverview && 'line-clamp-3'}`}>
+            <p className={`text-black ${!showFullOverview && 'line-clamp-3'}`}>
               {detailedOverview}
             </p>
             {detailedOverview?.length > 200 && (
@@ -66,8 +66,8 @@ const ContentTabs = ({
                 alt={person.name}
                 className="w-full rounded-lg"
               />
-              <p className="mt-2 text-sm font-medium text-white">{person.name}</p>
-              <p className="text-xs text-gray-400">{person.character}</p>
+              <p className="mt-2 text-sm font-medium text-black">{person.name}</p>
+              <p className="text-xs text-gray-600">{person.character}</p>
             </div>
           ))}
         </Tab.Panel>
@@ -75,8 +75,8 @@ const ContentTabs = ({
           <div className="space-y-4">
             {reviews.map((review) => (
               <div key={review.id} className="bg-black/20 rounded-lg p-4">
-                <p className="text-gray-300">{review.content}</p>
-                <p className="mt-2 text-sm text-gray-400">- {review.author}</p>
+                <p className="text-black">{review.content}</p>
+                <p className="mt-2 text-sm text-gray-600">- {review.author}</p>
               </div>
             ))}
           </div>
