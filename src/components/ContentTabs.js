@@ -20,24 +20,24 @@ const ContentTabs = ({
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-black shadow'
-            : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
+            ? 'bg-[#02c39a] text-white dark:text-black shadow'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'}`
         }>
           Overview
         </Tab>
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-black shadow'
-            : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
+            ? 'bg-[#02c39a] text-white dark:text-black shadow'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'}`
         }>
           Cast & Crew
         </Tab>
         <Tab className={({ selected }) =>
           `w-full rounded-lg py-2.5 text-sm font-medium leading-5
            ${selected 
-            ? 'bg-[#02c39a] text-black shadow'
-            : 'text-gray-400 hover:bg-white/[0.12] hover:text-white'}`
+            ? 'bg-[#02c39a] text-white dark:text-black shadow'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-white/[0.12] hover:text-gray-900 dark:hover:text-white'}`
         }>
           Reviews
         </Tab>
@@ -45,7 +45,7 @@ const ContentTabs = ({
       <Tab.Panels className="mt-4">
         <Tab.Panel className="space-y-4">
           <div className="prose prose-invert max-w-none">
-            <p className={`text-black ${!showFullOverview && 'line-clamp-3'}`}>
+            <p className={`text-gray-800 dark:text-gray-200 ${!showFullOverview && 'line-clamp-3'}`}>
               {detailedOverview}
             </p>
             {detailedOverview?.length > 200 && (
@@ -66,17 +66,17 @@ const ContentTabs = ({
                 alt={person.name}
                 className="w-full rounded-lg"
               />
-              <p className="mt-2 text-sm font-medium text-black">{person.name}</p>
-              <p className="text-xs text-gray-600">{person.character}</p>
+              <p className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">{person.name}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{person.character}</p>
             </div>
           ))}
         </Tab.Panel>
         <Tab.Panel>
           <div className="space-y-4">
             {reviews.map((review) => (
-              <div key={review.id} className="bg-black/20 rounded-lg p-4">
-                <p className="text-black">{review.content}</p>
-                <p className="mt-2 text-sm text-gray-600">- {review.author}</p>
+              <div key={review.id} className="bg-gray-100 dark:bg-black/20 rounded-lg p-4">
+                <p className="text-gray-800 dark:text-gray-200">{review.content}</p>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">- {review.author}</p>
               </div>
             ))}
           </div>

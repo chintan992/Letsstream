@@ -853,87 +853,33 @@ const WatchPage = () => {
         </AnimatePresence>
 
           <div className="fixed bottom-4 sm:bottom-6 left-2 sm:left-6 z-[60] flex flex-col gap-2">
-          <motion.button
-            onClick={handleWatchlistToggle}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`${buttonClasses.base} ${isInWatchlist
-              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
-              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
-                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
-            aria-label="Toggle Watchlist"
-          >
-            <div className="relative flex items-center justify-center">
-              <motion.svg
-                className="w-5 h-5 sm:w-6 sm:h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d={isInWatchlist
-                    ? "M6 18L18 6M6 6l12 12"
-                    : "M12 4v16m8-8H4"} />
-              </motion.svg>
-              <span className="hidden sm:inline ml-2 whitespace-nowrap">
-                {isInWatchlist ? 'Remove Watchlist' : 'Add Watchlist'}
-              </span>
-            </div>
-          </motion.button>
-
-          <motion.button
-            onClick={handleFavoritesToggle}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`${buttonClasses.base} ${isInFavorites
-              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
-              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
-                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
-            aria-label="Toggle Favorites"
-          >
-            <div className="relative flex items-center justify-center">
-              <motion.svg
-                className="w-5 h-5 sm:w-6 sm:h-6"
-                fill={isInFavorites ? "currentColor" : "none"}
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </motion.svg>
-              <span className="hidden sm:inline ml-2 whitespace-nowrap">
-                {isInFavorites ? 'Remove Favorites' : 'Add Favorites'}
-              </span>
-            </div>
-          </motion.button>
-
-          <motion.button
-            onClick={() => setShowUserLists(true)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className={`${buttonClasses.base} ${showUserLists
-              ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
-              : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
-                : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
-            aria-label="Open user lists"
-          >
-            <div className="relative flex items-center justify-center">
-              <motion.svg
-                animate={{ rotate: showUserLists ? 90 : 0 }}
-                className="w-5 h-5 sm:w-6 sm:h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16" />
-              </motion.svg>
-              <span className="hidden sm:inline ml-2 whitespace-nowrap">
-                My Lists
-              </span>
-            </div>
-          </motion.button>
-        </div>
+            <motion.button
+              onClick={() => setShowUserLists(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`${buttonClasses.base} ${showUserLists
+                ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
+                : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
+                  : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
+              aria-label="Open user lists"
+            >
+              <div className="relative flex items-center justify-center">
+                <motion.svg
+                  animate={{ rotate: showUserLists ? 90 : 0 }}
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16" />
+                </motion.svg>
+                <span className="hidden sm:inline ml-2 whitespace-nowrap">
+                  My Lists
+                </span>
+              </div>
+            </motion.button>
+          </div>
 
         <AnimatePresence>
           {showUserLists && (
