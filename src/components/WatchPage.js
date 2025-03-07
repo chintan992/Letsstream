@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDarkMode } from './DarkModeContext';
 import { useUserFeatures } from '../hooks/useUserFeatures';
@@ -7,16 +7,18 @@ import { getStoredVideoSource, setStoredVideoSource, saveTVProgress, getTVProgre
 import VideoSection from './VideoSection';
 import { useAuth } from '../context/AuthContext';
 import SourceSelector from './SourceSelector';
-import Recommendations from './Recommendations';
 import fetchEpisodes from '../utils/fetchEpisodes';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from './ErrorBoundaryWatchPage';
 import EpisodeNavigation from './EpisodeNavigation';
-import ContentTabs from './ContentTabs';
 import QuickActions from './QuickActions';
-import EpisodeGrid from './EpisodeGrid';
-import UserListsSidebar from './UserListsSidebar';
 import UseBrave from './UseBrave';
+
+// Lazy load components that are not immediately needed
+const ContentTabs = lazy(() => import('./ContentTabs'));
+const Recommendations = lazy(() => import('./Recommendations'));
+const EpisodeGrid = lazy(() => import('./EpisodeGrid'));
+const UserListsSidebar = lazy(() => import('./UserListsSidebar'));
 
 const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const BASE_URL = process.env.REACT_APP_TMDB_BASE_URL;
@@ -65,6 +67,8 @@ const WatchPage = () => {
   const [currentEpisode, setCurrentEpisode] = useState(null);
   const [episodeLayout, setEpisodeLayout] = useState('list'); // 'list' or 'grid'
   const [showBackgroundPoster, setShowBackgroundPoster] = useState(false);
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const buttonClasses = {
     base: `flex items-center gap-1.5 sm:gap-2 xs:gap-1 p-3 sm:p-4 xs:p-2 rounded-full shadow-lg transition-all duration-300
@@ -379,6 +383,57 @@ const WatchPage = () => {
     fetchAdditionalData();
   }, [type, id]);
 
+  useEffect(() => {
+    const checkDevicePerformance = () => {
+      // Check if device is low-end based on memory and CPU cores
+      if ('deviceMemory' in navigator || 'hardwareConcurrency' in navigator) {
+        const lowMemory = navigator.deviceMemory < 4;
+        const lowCPU = navigator.hardwareConcurrency < 4;
+        setIsLowEndDevice(lowMemory || lowCPU);
+      } else {
+        // Fallback to user agent check for mobile devices
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+        setIsLowEndDevice(isMobile);
+      }
+    };
+
+    checkDevicePerformance();
+  }, []);
+
+  // Add fullscreen detection
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Add intersection observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.src = entry.target.dataset.src;
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: '50px' }
+    );
+
+    const lazyImages = document.querySelectorAll('img[data-src]');
+    lazyImages.forEach((img) => observer.observe(img));
+
+    return () => observer.disconnect();
+  }, []);
+
+  const shouldShowBackgroundPoster = !isLowEndDevice && showBackgroundPoster;
+
   if (isLoading) {
     return (
       <div className={`min-h-screen ${isDarkMode ? 'bg-[#0a1118]' : 'bg-gray-50'}`}>
@@ -459,8 +514,8 @@ const WatchPage = () => {
       exit="exit"
       variants={pageTransition}
     >
-      {/* Background Poster */}
-      {item?.poster_path && (
+      {/* Background Poster - Now conditional based on device performance */}
+      {item?.poster_path && shouldShowBackgroundPoster && (
         <motion.div 
           className={`fixed inset-0 z-0 transition-opacity duration-500 ${
             showBackgroundPoster ? 'opacity-70' : 'opacity-0'
@@ -472,9 +527,10 @@ const WatchPage = () => {
           }}
         >
           <motion.img
-            src={`https://image.tmdb.org/t/p/original${item.backdrop_path || item.poster_path}`}
+            data-src={`https://image.tmdb.org/t/p/original${item.backdrop_path || item.poster_path}`}
             alt=""
             className="w-full h-full object-cover object-center blur-md"
+            loading="lazy"
             initial={{ opacity: 0 }}
             animate={{ opacity: showBackgroundPoster ? 1 : 0, blur: showBackgroundPoster ? 10 : 0 }}
             transition={{ duration: 0.5 }}
@@ -493,365 +549,317 @@ const WatchPage = () => {
             initial="hidden"
             animate="show"
           >
-            {/* Update the poster and title section for better mobile display */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
-              <div className="md:col-span-2 space-y-2 sm:space-y-4">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-8">
+              {/* Main content column */}
+              <div className="lg:w-2/3 flex flex-col space-y-4">
+                {/* Title and tagline */}
+                <div className="flex flex-col gap-4 mb-6">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white/90">
+                    {item?.title || item?.name}
+                  </h1>
+                  {item?.tagline && (
+                    <p className="text-lg sm:text-xl text-white/70 italic">
+                      {item.tagline}
+                    </p>
+                  )}
+                </div>
+
+                {/* Video Player */}
                 <motion.div 
-                  className="mb-2 sm:mb-4"
+                  className={`relative rounded-lg overflow-hidden bg-[#000000] shadow-md sm:shadow-xl dark:shadow-black/50 w-full ${isFullscreen ? 'fixed inset-0 z-[100]' : ''}`}
                   variants={itemVariants}
+                  layoutId="videoPlayer"
                 >
-                  <div className="flex flex-col xs:flex-row gap-4 sm:gap-6">
-                    {/* Poster */}
-                    <div className="flex-shrink-0 w-full xs:w-32 sm:w-40 md:w-48 mx-auto xs:mx-0 max-w-[180px] xs:max-w-none">
-                      <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg dark:shadow-black/50">
-                        <img
-                          src={`https://image.tmdb.org/t/p/w500${item?.poster_path}`}
-                          alt={item?.title || item?.name}
-                          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            e.target.src = '/fallback-poster.jpg';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      </div>
-                    </div>
-
-                    {/* Title and Metadata */}
-                    <div className="flex-1 space-y-2 sm:space-y-3 text-center xs:text-left">
-                      <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold text-white/90 line-clamp-2">
-                        {item?.title || item?.name}
-                      </h1>
-                      <div className="flex flex-wrap items-center justify-center xs:justify-start gap-2 sm:gap-3 text-xs sm:text-sm text-white/60">
-                        {(item?.release_date || item?.first_air_date) && (
-                          <span className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {new Date(item?.release_date || item?.first_air_date).getFullYear()}
-                          </span>
-                        )}
-                        {item?.vote_average ? (
-                          <span className="flex items-center gap-1.5">
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.396-.902 1.506-.902 1.902 0l1.286 2.93a1 1 0 00.832.604l3.018.33c.98.107 1.373 1.361.625 2.04l-2.3 2.112a1 1 0 00-.318.981l.669 2.983c.219.97-.857 1.73-1.726 1.218L10 14.147l-2.736 1.98c-.87.512-1.945-.248-1.726-1.218l.669-2.983a1 1 0 00-.318-.981l-2.3-2.112c-.748-.679-.355-1.933.625-2.04l3.018-.33a1 1 0 00.832-.604l1.286-2.93z" />
-                          </svg>
-                          {item.vote_average.toFixed(1)}
-                        </span>
-                      ) : null}
-                      {(item?.runtime || item?.episode_run_time?.[0]) ? (
-                        <span className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {item?.runtime || item?.episode_run_time?.[0]} min
-                        </span>
-                      ) : null}
-                    </div>
-                    {item?.genres && (
-                      <div className="flex flex-wrap justify-center xs:justify-start gap-1.5 sm:gap-2">
-                        {item.genres.map((genre) => (
-                          <span 
-                            key={genre.id}
-                            className="px-2 py-1 text-xs sm:text-sm bg-white/10 rounded-md text-white/80"
-                          >
-                            {genre.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="mb-2 sm:mb-4 relative z-[70]"
-                variants={itemVariants}
-                whileHover={{ scale: 1.01 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-1 sm:gap-3 bg-black/40 
-                  backdrop-blur-sm rounded-lg p-1.5 sm:p-2 border border-white/10">
-                  <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 
-                    bg-white/5 rounded-md touch-manipulation">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-[#02c39a]" 
-                      viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2z" />
-                    </svg>
-                      <span className="text-[10px] xs:text-[11px] sm:text-sm text-white/80 font-medium 
-                      hidden xs:inline leading-none">Player Source</span>
-                    <span className="text-[10px] xs:text-[11px] sm:text-sm text-white/80 font-medium 
-                      xs:hidden leading-none">Source</span>
-                  </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <SourceSelector
-                      videoSource={videoSource}
-                      handleSourceChange={handleSourceChange}
-                      showSourceMenu={showSourceMenu}
-                      setShowSourceMenu={setShowSourceMenu}
+                  {isVideoReady ? (
+                    <VideoSection
+                      ref={videoSectionRef}
+                      mediaData={{ ...mediaData, apiType: videoSource }}
+                      isVideoReady={isVideoReady}
+                      onSubmit={handleSubmit}
+                      iframeRef={iframeRef}
+                      allowFullscreen={true}
+                      onSourceChange={handleSourceChange}
                     />
-                    <a
-                      href={type === 'movie' 
-                        ? `https://dl.vidsrc.vip/movie/${id}`
-                        : `https://dl.vidsrc.vip/tv/${id}/${mediaData.season}/${mediaData.episodeNo}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-1.5 sm:px-2 py-1 bg-white/5 rounded-lg text-white/60 hover:text-white/90 transition-colors text-xs sm:text-sm"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      <span className="text-xs sm:text-sm">Download</span>
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="relative rounded-lg overflow-hidden bg-[#000000] shadow-md sm:shadow-xl dark:shadow-black/50"
-                variants={itemVariants}
-                layoutId="videoPlayer"
-              >
-                {isVideoReady ? (
-                  <VideoSection
-                    ref={videoSectionRef}
-                    mediaData={{ ...mediaData, apiType: videoSource }}
-                    isVideoReady={isVideoReady}
-                    onSubmit={handleSubmit}
-                    iframeRef={iframeRef}
-                    allowFullscreen={true}
-                    onSourceChange={handleSourceChange}
-                  />
-                ) : (
-                  <motion.div 
-                    className="relative rounded-lg overflow-hidden bg-[#000000] shadow-md sm:shadow-xl 
-                      dark:shadow-black/50 aspect-video flex items-center justify-center"
-                    animate={{ opacity: [0.5, 1] }}
-                    transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
-                  >
+                  ) : (
                     <motion.div 
-                      className="rounded-full h-8 w-8 sm:h-12 sm:w-12 border-3 sm:border-4 
-                        border-[#02c39a] border-t-transparent"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    />
-                  </motion.div>
-                )}
-              </motion.div>
+                      className="relative rounded-lg overflow-hidden bg-[#000000] shadow-md sm:shadow-xl 
+                        dark:shadow-black/50 aspect-video flex items-center justify-center"
+                      animate={{ opacity: [0.5, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+                    >
+                      <motion.div 
+                        className="rounded-full h-8 w-8 sm:h-12 sm:w-12 border-3 sm:border-4 
+                          border-[#02c39a] border-t-transparent"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    </motion.div>
+                  )}
+                </motion.div>
 
-              {type === 'tv' && (
+                {/* Source selector and controls */}
                 <motion.div 
-                  className="space-y-2 sm:space-y-3"
+                  className="mb-2 sm:mb-4 relative z-[70]"
                   variants={itemVariants}
                 >
-                  <motion.div 
-                    className="flex items-center justify-between gap-2 px-2"
-                    layout
-                  >
-                    <h3 className="text-sm sm:text-base font-medium text-white/90">Episodes</h3>
-                    <div className="flex items-center gap-2">
-                      <AnimatePresence mode="wait">
-                        {episodeLayout === 'list' && (
-                          <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="flex items-center gap-1.5 sm:gap-2 bg-black/20 rounded-lg px-1.5 sm:px-2 py-1"
-                          >
-                            <span className="text-xs sm:text-sm text-white/60">Season:</span>
-                            <select
-                              value={mediaData.season}
-                              onChange={(e) => handleInputChange({
-                                target: { name: 'season', value: e.target.value }
-                              })}
-                              className="bg-transparent text-white/90 text-xs sm:text-sm font-medium 
-                                outline-none cursor-pointer hover:text-[#02c39a] transition-colors py-1 px-1.5 sm:px-2 
-                                touch-manipulation"
-                            >
-                              {seasons.map((season) => (
-                                <option 
-                                  key={season.season_number}
-                                  value={season.season_number}
-                                  className="bg-[#1a2634] text-white"
+                  <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-black/40 
+                    backdrop-blur-sm rounded-lg p-2 sm:p-3 border border-white/10">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-[120px] sm:min-w-[140px]">
+                      <SourceSelector
+                        videoSource={videoSource}
+                        handleSourceChange={handleSourceChange}
+                        showSourceMenu={showSourceMenu}
+                        setShowSourceMenu={setShowSourceMenu}
+                      />
+                      <a
+                        href={type === 'movie' 
+                          ? `https://dl.vidsrc.vip/movie/${id}`
+                          : `https://dl.vidsrc.vip/tv/${id}/${mediaData.season}/${mediaData.episodeNo}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white/5 rounded-lg 
+                          text-white/60 hover:text-white/90 transition-colors text-sm sm:text-base 
+                          active:scale-95 transform hover:scale-105"
+                      >
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Download</span>
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Episode navigation for TV shows */}
+                <Suspense fallback={<div className="h-40 bg-gray-800/40 animate-pulse rounded-lg" />}>
+                  {type === 'tv' && (
+                    <motion.div 
+                      className="space-y-3 sm:space-y-4"
+                      variants={itemVariants}
+                    >
+                      <motion.div 
+                        className="flex items-center justify-between gap-3 px-2"
+                        layout
+                      >
+                        <h3 className="text-base sm:text-lg font-medium text-white/90">Episodes</h3>
+                        <div className="flex items-center gap-3">
+                          <AnimatePresence mode="wait">
+                            {episodeLayout === 'list' && (
+                              <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="flex items-center gap-2 sm:gap-3 bg-black/20 rounded-lg px-2 sm:px-3 py-2"
+                              >
+                                <span className="text-sm sm:text-base text-white/60">Season:</span>
+                                <select
+                                  value={mediaData.season}
+                                  onChange={(e) => handleInputChange({
+                                    target: { name: 'season', value: e.target.value }
+                                  })}
+                                  className="bg-transparent text-white/90 text-sm sm:text-base font-medium 
+                                    outline-none cursor-pointer hover:text-[#02c39a] transition-colors
+                                    py-1.5 px-2 sm:px-3 rounded-md touch-manipulation min-h-[40px]"
                                 >
-                                  {season.season_number}
-                                </option>
-                              ))}
-                            </select>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      <div className="flex items-center gap-1 sm:gap-2 bg-black/20 rounded-lg p-1">
-                        <button
-                          onClick={() => setEpisodeLayout('list')}
-                          className={`p-2 sm:p-1.5 rounded-md transition-all duration-200 touch-manipulation ${
-                            episodeLayout === 'list'
-                              ? 'bg-[#02c39a] text-white'
-                              : 'text-white/60 hover:text-white/90'
-                          }`}
-                          aria-label="List view"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M4 6h16M4 12h16M4 18h16" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => setEpisodeLayout('grid')}
-                          className={`p-2 sm:p-1.5 rounded-md transition-all duration-200 touch-manipulation ${
-                            episodeLayout === 'grid'
-                              ? 'bg-[#02c39a] text-white'
-                              : 'text-white/60 hover:text-white/90'
-                          }`}
-                          aria-label="Grid view"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                          </svg>
-                        </button>
+                                  {seasons.map((season) => (
+                                    <option 
+                                      key={season.season_number}
+                                      value={season.season_number}
+                                      className="bg-[#1a2634] text-white py-2"
+                                    >
+                                      {season.season_number}
+                                    </option>
+                                  ))}
+                                </select>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                          <div className="flex items-center gap-2 bg-black/20 rounded-lg p-1.5">
+                            <button
+                              onClick={() => setEpisodeLayout('list')}
+                              className={`p-2.5 sm:p-3 rounded-md transition-all duration-200 touch-manipulation
+                                ${episodeLayout === 'list'
+                                  ? 'bg-[#02c39a] text-white'
+                                  : 'text-white/60 hover:text-white/90'
+                                }`}
+                              aria-label="List view"
+                            >
+                              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M4 6h16M4 12h16M4 18h16" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setEpisodeLayout('grid')}
+                              className={`p-2.5 sm:p-3 rounded-md transition-all duration-200 touch-manipulation
+                                ${episodeLayout === 'grid'
+                                  ? 'bg-[#02c39a] text-white'
+                                  : 'text-white/60 hover:text-white/90'
+                                }`}
+                              aria-label="Grid view"
+                            >
+                              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="w-full overflow-hidden bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm 
+                          rounded-lg hover:bg-white/10 dark:hover:bg-gray-800/60 
+                          transition-colors duration-200"
+                        layout
+                        variants={itemVariants}
+                      >
+                        <AnimatePresence mode="wait">
+                          {episodeLayout === 'list' ? (
+                            <motion.div
+                              key="list"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 20 }}
+                              className="min-w-0 sm:min-w-[300px] p-1.5 sm:p-2"
+                            >
+                              <EpisodeNavigation
+                                episodes={episodes}
+                                currentEpisodeNo={mediaData.episodeNo}
+                                currentEpisode={currentEpisode}
+                                season={mediaData.season}
+                                onEpisodeChange={(newEpisodeNo) => handleInputChange({
+                                  target: { name: 'episodeNo', value: newEpisodeNo.toString() }
+                                })}
+                                isDarkMode={isDarkMode}
+                                isLoading={!isVideoReady}
+                              />
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="grid"
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -20 }}
+                              className="min-w-[300px] p-1.5 sm:p-2"
+                            >
+                              <EpisodeGrid
+                                type={type}
+                                mediaData={mediaData}
+                                episodes={episodes}
+                                seasons={seasons}
+                                currentEpisode={currentEpisode}
+                                handleInputChange={handleInputChange}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </Suspense>
+
+                {/* Content tabs */}
+                <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
+                  {item && (
+                    <motion.div
+                      variants={itemVariants}
+                      className={`mt-3 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
+                        shadow-md sm:shadow-lg dark:shadow-black/50 p-3 sm:p-6`}
+                      whileHover={{ scale: 1.005 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <ContentTabs
+                        item={item}
+                        detailedOverview={detailedOverview}
+                        showFullOverview={showFullOverview}
+                        setShowFullOverview={setShowFullOverview}
+                        cast={cast}
+                        crew={crew}
+                        reviews={reviews}
+                        similar={similar}
+                        handleListItemClick={handleListItemClick}
+                      />
+                    </motion.div>
+                  )}
+                </Suspense>
+              </div>
+
+              {/* Recommendations column */}
+              <div className="lg:w-1/3">
+                <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
+                  <motion.div 
+                    className="sticky top-6 space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <div className="hidden lg:block">
+                      <div className={`p-4 ${isDarkMode ? 'bg-white/5 dark:bg-gray-800/40' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}` } backdrop-blur-sm rounded-lg`}>
+                        <Recommendations
+                          recommendations={recommendations}
+                          handleListItemClick={handleListItemClick}
+                        />
+                      </div>
+                    </div>
+                    <div className="block lg:hidden">
+                      <div className="space-y-4">
+                        <h2 className="text-lg font-semibold text-white/90 px-2">Recommended</h2>
+                        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg p-3">
+                          {recommendations.slice(0, 6).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex flex-col gap-2 cursor-pointer group"
+                              onClick={() => handleListItemClick(item)}
+                            >
+                              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg">
+                                <img
+                                  src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+                                  data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                                  alt={item.title || item.name}
+                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-200"
+                                  loading="lazy"
+                                  onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              </div>
+                              <h3 className="text-sm text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors">
+                                {item.title || item.name}
+                              </h3>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
-
-                  <motion.div 
-                    className="w-full overflow-hidden bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm 
-                      rounded-lg hover:bg-white/10 dark:hover:bg-gray-800/60 
-                      transition-colors duration-200"
-                    layout
-                    variants={itemVariants}
-                  >
-                    <AnimatePresence mode="wait">
-                      {episodeLayout === 'list' ? (
-                        <motion.div
-                          key="list"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 20 }}
-                  className="min-w-0 sm:min-w-[300px] p-1.5 sm:p-2"
-                        >
-                          <EpisodeNavigation
-                            episodes={episodes}
-                            currentEpisodeNo={mediaData.episodeNo}
-                            currentEpisode={currentEpisode}
-                            season={mediaData.season}
-                            onEpisodeChange={(newEpisodeNo) => handleInputChange({
-                              target: { name: 'episodeNo', value: newEpisodeNo.toString() }
-                            })}
-                            isDarkMode={isDarkMode}
-                            isLoading={!isVideoReady}
-                          />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="grid"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          className="min-w-[300px] p-1.5 sm:p-2"
-                        >
-                          <EpisodeGrid
-                            type={type}
-                            mediaData={mediaData}
-                            episodes={episodes}
-                            seasons={seasons}
-                            currentEpisode={currentEpisode}
-                            handleInputChange={handleInputChange}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </motion.div>
-              )}
-
-              {item && (
-                <motion.div
-                  variants={itemVariants}
-                  className={`mt-3 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
-                    shadow-md sm:shadow-lg dark:shadow-black/50 p-3 sm:p-6`}
-                  whileHover={{ scale: 1.005 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <ContentTabs
-                    item={item}
-                    detailedOverview={detailedOverview}
-                    showFullOverview={showFullOverview}
-                    setShowFullOverview={setShowFullOverview}
-                    cast={cast}
-                    crew={crew}
-                    reviews={reviews}
-                    similar={similar}
-                    handleListItemClick={handleListItemClick}
-                  />
-                </motion.div>
-              )}
+                </Suspense>
+              </div>
             </div>
+          </motion.div>
 
-            <div>
-              <motion.div 
-                className="sticky top-6 space-y-4"
+          {/* Quick actions */}
+          <AnimatePresence>
+            {showQuickActions && (
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
               >
-                <div className="hidden lg:block">
-                  <div className={`p-4 ${isDarkMode ? 'bg-white/5 dark:bg-gray-800/40' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}` } backdrop-blur-sm rounded-lg`}>
-                    <Recommendations
-                      recommendations={recommendations}
-                      handleListItemClick={handleListItemClick}
-                    />
-                  </div>
-                </div>
-                <div className="block lg:hidden">
-                  <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-4 gap-2 sm:gap-4 bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg p-2 sm:p-4">
-                    {recommendations.slice(0, 6).map((item) => (
-                      <div key={item.id} 
-                        className="flex flex-col items-center group hover:scale-105 transition-transform duration-200"
-                        onClick={() => handleListItemClick(item)}
-                      >
-                        <div className="relative overflow-hidden rounded-lg shadow-lg dark:shadow-black/30">
-                          <img
-                            src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                            alt={item.title || item.name}
-                            className="w-full xs:w-24 h-36 object-cover transform group-hover:scale-110 transition-transform duration-200"
-                          />
-                        </div>
-                        <p className="text-center text-sm mt-2 text-gray-200 group-hover:text-[#02c39a] transition-colors">
-                          {item.title || item.name}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <QuickActions
+                  isInWatchlist={isInWatchlist}
+                  isInFavorites={isInFavorites}
+                  handleWatchlistToggle={handleWatchlistToggle}
+                  handleFavoritesToggle={handleFavoritesToggle}
+                  showQuickActions={showQuickActions}
+                />
               </motion.div>
-            </div>
-          </div>
-        </motion.div>
+            )}
+          </AnimatePresence>
 
-        <AnimatePresence>
-          {showQuickActions && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
-            >
-              <QuickActions
-                isInWatchlist={isInWatchlist}
-                isInFavorites={isInFavorites}
-                handleWatchlistToggle={handleWatchlistToggle}
-                handleFavoritesToggle={handleFavoritesToggle}
-                showQuickActions={showQuickActions}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+          {/* User lists button */}
           <div className="fixed bottom-4 sm:bottom-6 left-2 sm:left-6 z-[60] flex flex-col gap-2">
             <motion.button
               onClick={() => setShowUserLists(true)}
@@ -871,8 +879,12 @@ const WatchPage = () => {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16" />
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16" 
+                  />
                 </motion.svg>
                 <span className="hidden sm:inline ml-2 whitespace-nowrap">
                   My Lists
@@ -881,29 +893,33 @@ const WatchPage = () => {
             </motion.button>
           </div>
 
-        <AnimatePresence>
-          {showUserLists && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[65]"
-              onClick={() => setShowUserLists(false)}
-            />
-          )}
-        </AnimatePresence>
+          {/* User lists overlay */}
+          <AnimatePresence>
+            {showUserLists && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[65]"
+                onClick={() => setShowUserLists(false)}
+              />
+            )}
+          </AnimatePresence>
 
-        <UserListsSidebar
-          showUserLists={showUserLists}
-          setShowUserLists={setShowUserLists}
-          watchHistory={watchHistory}
-          watchlist={watchlist}
-          favorites={favorites}
-          handleListItemClick={handleListItemClick}
-        />
-      </ErrorBoundary>
-    </div>
-  </motion.div>
+          {/* User lists sidebar */}
+          <Suspense fallback={null}>
+            <UserListsSidebar
+              showUserLists={showUserLists}
+              setShowUserLists={setShowUserLists}
+              watchHistory={watchHistory}
+              watchlist={watchlist}
+              favorites={favorites}
+              handleListItemClick={handleListItemClick}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </div>
+    </motion.div>
   );
 };
 

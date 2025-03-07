@@ -1,31 +1,45 @@
 import React from 'react';
 
-const Recommendations = ({ recommendations, handleListItemClick }) => (
-  <div className="bg-white dark:bg-[#000e14] rounded-xl shadow-lg p-6">
-    <h2 className="text-xl font-bold mb-4">Recommendations</h2>
+const Recommendations = ({ recommendations, handleListItemClick }) => {
+  // Add fallback image handling
+  const handleImageError = (e) => {
+    e.target.src = '/fallback-poster.jpg';
+  };
+
+  return (
     <div className="space-y-4">
-      {recommendations.slice(0, 5).map((rec) => (
-        <div
-          key={rec.id}
-          onClick={() => handleListItemClick(rec)}
-          className="flex items-center space-x-3 p-2 rounded-lg cursor-pointer
-            hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-        >
-          <img
-            src={`https://image.tmdb.org/t/p/w92${rec.poster_path}`}
-            alt={rec.title || rec.name}
-            className="w-16 h-20 object-cover rounded"
-          />
-          <div>
-            <h3 className="font-medium line-clamp-2">{rec.title || rec.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Rating: {rec.vote_average.toFixed(1)}
-            </p>
+      <h2 className="text-lg sm:text-xl font-semibold text-white/90">Recommended</h2>
+      <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+        {recommendations.map((item) => (
+          <div
+            key={item.id}
+            onClick={() => handleListItemClick(item)}
+            className="flex flex-col gap-2 cursor-pointer group"
+          >
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
+              <img
+                src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+                data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                alt={item.title || item.name}
+                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-200"
+                loading="lazy"
+                onError={handleImageError}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium text-white/90 line-clamp-1 group-hover:text-[#02c39a] transition-colors">
+                {item.title || item.name}
+              </h3>
+              <p className="text-xs text-white/60">
+                {new Date(item.release_date || item.first_air_date).getFullYear()}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default Recommendations;
