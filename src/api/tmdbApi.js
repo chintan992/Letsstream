@@ -446,3 +446,14 @@ export const getRecommendations = async (mediaType, id, page = 1) => {
     throw new Error('Failed to fetch recommendations. Please try again later.');
   }
 };
+
+export const getIframeSrc = (mediaData) => {
+  const baseUrl = 'https://www.youtube.com/embed/';
+  const urlPath = mediaData.key;
+  const embedUrl = `${baseUrl}${urlPath}`;
+  
+  // Remove PiP parameter and keep other essential parameters
+  const enhancedUrl = `${embedUrl}?autoplay=1&controls=1&enablejsapi=1&widgetid=1&allowfullscreen=true`;
+  
+  return enhancedUrl;
+};
