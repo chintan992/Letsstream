@@ -791,46 +791,86 @@ const WatchPage = () => {
               <div className="lg:w-1/3">
                 <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
                   <motion.div 
-                    className="sticky top-6 space-y-4"
+                    className="sticky top-6 space-y-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                   >
+                    {/* Desktop Recommendations */}
                     <div className="hidden lg:block">
-                      <div className={`p-4 ${isDarkMode ? 'bg-white/5 dark:bg-gray-800/40' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}` } backdrop-blur-sm rounded-lg`}>
-                        <Recommendations
-                          recommendations={recommendations}
-                          handleListItemClick={handleListItemClick}
-                        />
+                      <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-lg">
+                        <div className="p-4 border-b border-white/10">
+                          <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
+                        </div>
+                        <div className="p-4">
+                          <Recommendations
+                            recommendations={recommendations}
+                            handleListItemClick={handleListItemClick}
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Mobile Recommendations */}
                     <div className="block lg:hidden">
                       <div className="space-y-4">
-                        <h2 className="text-lg font-semibold text-white/90 px-2">Recommended</h2>
-                        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-white/5 dark:bg-gray-800/40 backdrop-blur-sm rounded-lg p-3">
-                          {recommendations.slice(0, 6).map((item) => (
-                            <div
+                        <div className="flex items-center justify-between px-2">
+                          <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="p-2 rounded-lg bg-[#02c39a]/10 text-[#02c39a] hover:bg-[#02c39a]/20 transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </motion.button>
+                        </div>
+                        <motion.div 
+                          className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-black/40 
+                            backdrop-blur-sm rounded-xl border border-white/10 p-4"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ staggerChildren: 0.1 }}
+                        >
+                          {recommendations.slice(0, 6).map((item, index) => (
+                            <motion.div
                               key={item.id}
-                              className="flex flex-col gap-2 cursor-pointer group"
+                              className="group relative flex flex-col gap-2 cursor-pointer"
                               onClick={() => handleListItemClick(item)}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ scale: 1.05 }}
                             >
-                              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg">
+                              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                                 <img
                                   src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
                                   data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
                                   alt={item.title || item.name}
-                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-200"
+                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
                                   loading="lazy"
                                   onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  <div className="absolute bottom-0 left-0 right-0 p-2">
+                                    <p className="text-xs text-white/90 text-center line-clamp-2">
+                                      {item.overview?.slice(0, 50)}...
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
-                              <h3 className="text-sm text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors">
+                              <motion.h3 
+                                className="text-sm font-medium text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                              >
                                 {item.title || item.name}
-                              </h3>
-                            </div>
+                              </motion.h3>
+                            </motion.div>
                           ))}
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
                   </motion.div>
