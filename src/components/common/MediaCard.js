@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FaPlay, FaHeart, FaShare } from 'react-icons/fa';
-//import toast from 'react-hot-toast';
 import {
   FacebookShareButton,
   TwitterShareButton,
@@ -11,7 +10,6 @@ import {
 
 const MediaCard = ({ item, onWatchlistToggle, isInWatchlist }) => {
   const navigate = useNavigate();
- // const [isHovered, setIsHovered] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   const handlePlayClick = () => {
@@ -36,8 +34,6 @@ const MediaCard = ({ item, onWatchlistToggle, isInWatchlist }) => {
       className="relative aspect-[2/3] rounded-lg overflow-hidden group"
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
-      //onHoverStart={() => setIsHovered(true)}
-      //onHoverEnd={() => setIsHovered(false)}
     >
       <img
         src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
