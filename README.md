@@ -138,6 +138,12 @@ To set up the project locally, follow these steps:
 
    Once deployed, your app will be available at the Cloudflare Pages URL.
 
+## New Release 
+```
+git tag Release-v1.0.0
+git push origin Release-v1.0.0
+```
+
 ## Project Structure 
 ```
 /React-Video-Player/
