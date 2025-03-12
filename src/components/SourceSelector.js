@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { VIDEO_SOURCES } from '../api';
 
 const SourceSelector = ({ videoSource, handleSourceChange, showSourceMenu, setShowSourceMenu }) => {
@@ -12,11 +12,11 @@ const SourceSelector = ({ videoSource, handleSourceChange, showSourceMenu, setSh
         }
     };
 
-    const handleClickOutside = (event) => {
+    const handleClickOutside = useCallback((event) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) {
             setShowSourceMenu(false);
         }
-    };
+    }, [dropdownRef, buttonRef, setShowSourceMenu]); // Dependencies for useCallback
 
     useEffect(() => {
         if (showSourceMenu) {
@@ -27,7 +27,7 @@ const SourceSelector = ({ videoSource, handleSourceChange, showSourceMenu, setSh
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showSourceMenu]);
+    }, [showSourceMenu, handleClickOutside]); // Dependency includes handleClickOutside
 
     return (
         <div className="mb-4">
