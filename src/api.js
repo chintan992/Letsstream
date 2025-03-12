@@ -61,12 +61,16 @@ const VIDEO_SOURCES = {
     name: 'SmashyStream',
     quality: 'HD',
   },
+  vidStream: { //Added VidStream
+    name: 'VidStream',
+    quality: 'HD',
+  },
 };
 
 const getIframeSrc = (mediaData) => {
   const { type, apiType, seriesId, season, episodeNo, movieId } = mediaData;
   let baseUrl = '';
-  
+
   // Anti-popup parameters for different providers
   const antiPopupParams = {
     multiembed: '&popups=0&block_popups=1',
@@ -137,6 +141,10 @@ const getIframeSrc = (mediaData) => {
       return type === 'series'
         ? `https://embed.smashystream.com/playere.php?tmdb=${seriesId}&season=${season}&episode=${episodeNo}`
         : `https://embed.smashystream.com/playere.php?tmdb=${movieId}`;
+    case 'vidStream': //Added VidStream Case
+      return type === 'series'
+        ? `https://vidstream.site/embed/tv/${seriesId}/${episodeNo}`
+        : `https://vidstream.site/embed/movie/${movieId}`;
     default:
       return '';
   }
