@@ -432,6 +432,16 @@ const WatchPage = () => {
     return () => observer.disconnect();
   }, []);
 
+  const handleOrientationChange = () => {
+    setIsVideoReady(false);
+    setTimeout(() => setIsVideoReady(true), 100);
+  };
+
+  useEffect(() => {
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => window.removeEventListener('orientationchange', handleOrientationChange);
+  }, []);
+
   const shouldShowBackgroundPoster = !isLowEndDevice && showBackgroundPoster;
 
   if (isLoading) {
