@@ -69,6 +69,7 @@ const WatchPage = () => {
   const [showBackgroundPoster, setShowBackgroundPoster] = useState(false);
   const [isLowEndDevice, setIsLowEndDevice] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDistractFree, setIsDistractFree] = useState(false);
 
   const buttonClasses = {
     base: `flex items-center gap-1.5 sm:gap-2 xs:gap-1 p-3 sm:p-4 xs:p-2 rounded-full shadow-lg transition-all duration-300
@@ -432,6 +433,16 @@ const WatchPage = () => {
     return () => observer.disconnect();
   }, []);
 
+  const handleOrientationChange = () => {
+    setIsVideoReady(false);
+    setTimeout(() => setIsVideoReady(true), 100);
+  };
+
+  useEffect(() => {
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => window.removeEventListener('orientationchange', handleOrientationChange);
+  }, []);
+
   const shouldShowBackgroundPoster = !isLowEndDevice && showBackgroundPoster;
 
   if (isLoading) {
@@ -551,18 +562,26 @@ const WatchPage = () => {
           >
             <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-8">
               {/* Main content column */}
-              <div className="lg:w-2/3 flex flex-col space-y-4">
+              <div className={`${isDistractFree ? 'w-full' : 'lg:w-2/3'} flex flex-col space-y-4`}>
                 {/* Title and tagline */}
-                <div className="flex flex-col gap-4 mb-6">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white/90">
-                    {item?.title || item?.name}
-                  </h1>
-                  {item?.tagline && (
-                    <p className="text-lg sm:text-xl text-white/70 italic">
-                      {item.tagline}
-                    </p>
+                <AnimatePresence>
+                  {!isDistractFree && (
+                    <motion.div 
+                      initial={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex flex-col gap-4 mb-6"
+                    >
+                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white/90">
+                        {item?.title || item?.name}
+                      </h1>
+                      {item?.tagline && (
+                        <p className="text-lg sm:text-xl text-white/70 italic">
+                          {item.tagline}
+                        </p>
+                      )}
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
 
                 {/* Video Player */}
                 <motion.div 
@@ -604,30 +623,54 @@ const WatchPage = () => {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-black/40 
                     backdrop-blur-sm rounded-lg p-2 sm:p-3 border border-white/10">
-                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-[120px] sm:min-w-[140px]">
-                      <SourceSelector
-                        videoSource={videoSource}
-                        handleSourceChange={handleSourceChange}
-                        showSourceMenu={showSourceMenu}
-                        setShowSourceMenu={setShowSourceMenu}
-                      />
-                      <a
-                        href={type === 'movie' 
-                          ? `https://dl.vidsrc.vip/movie/${id}`
-                          : `https://dl.vidsrc.vip/tv/${id}/${mediaData.season}/${mediaData.episodeNo}`
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white/5 rounded-lg 
-                          text-white/60 hover:text-white/90 transition-colors text-sm sm:text-base 
-                          active:scale-95 transform hover:scale-105"
-                      >
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        <span>Download</span>
-                      </a>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                      <div className="w-full sm:w-auto min-w-[120px]">
+                        <SourceSelector
+                          videoSource={videoSource}
+                          handleSourceChange={handleSourceChange}
+                          showSourceMenu={showSourceMenu}
+                          setShowSourceMenu={setShowSourceMenu}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <a
+                          href={type === 'movie' 
+                            ? `https://dl.vidsrc.vip/movie/${id}`
+                            : `https://dl.vidsrc.vip/tv/${id}/${mediaData.season}/${mediaData.episodeNo}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-white/5 rounded-lg 
+                            text-white/60 hover:text-white/90 transition-colors text-sm sm:text-base 
+                            active:scale-95 transform hover:scale-105"
+                        >
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          <span>Download</span>
+                        </a>
+                        <button
+                          onClick={() => setIsDistractFree(prev => !prev)}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-lg 
+                            transition-colors text-sm sm:text-base active:scale-95 transform hover:scale-105
+                            ${isDistractFree ? 
+                              'bg-[#02c39a] text-white hover:bg-[#00a896]' : 
+                              'bg-white/5 text-white/60 hover:text-white/90'}`}
+                          aria-label={isDistractFree ? "Exit distraction-free mode" : "Enter distraction-free mode"}
+                        >
+                          <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                              d={isDistractFree ?
+                                "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2z" :
+                                "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z"} 
+                            />
+                          </svg>
+                          <span className="hidden sm:inline">
+                            {isDistractFree ? "Exit Focus" : "Focus Mode"}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -762,201 +805,217 @@ const WatchPage = () => {
                 </Suspense>
 
                 {/* Content tabs */}
-                <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
-                  {item && (
-                    <motion.div
-                      variants={itemVariants}
-                      className={`mt-3 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
-                        shadow-md sm:shadow-lg dark:shadow-black/50 p-3 sm:p-6`}
-                      whileHover={{ scale: 1.005 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      <ContentTabs
-                        item={item}
-                        detailedOverview={detailedOverview}
-                        showFullOverview={showFullOverview}
-                        setShowFullOverview={setShowFullOverview}
-                        cast={cast}
-                        crew={crew}
-                        reviews={reviews}
-                        similar={similar}
-                        handleListItemClick={handleListItemClick}
-                      />
-                    </motion.div>
+                <AnimatePresence>
+                  {!isDistractFree && (
+                    <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
+                      {item && (
+                        <motion.div
+                          initial={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          variants={itemVariants}
+                          className={`mt-3 sm:mt-6 ${isDarkMode ? 'bg-white dark:bg-[#1a2634]' : `${lightModeStyles.cardBg} ${lightModeStyles.cardBorder}`} rounded-lg sm:rounded-xl 
+                            shadow-md sm:shadow-lg dark:shadow-black/50 p-3 sm:p-6`}
+                        >
+                          <ContentTabs
+                            item={item}
+                            detailedOverview={detailedOverview}
+                            showFullOverview={showFullOverview}
+                            setShowFullOverview={setShowFullOverview}
+                            cast={cast}
+                            crew={crew}
+                            reviews={reviews}
+                            similar={similar}
+                            handleListItemClick={handleListItemClick}
+                          />
+                        </motion.div>
+                      )}
+                    </Suspense>
                   )}
-                </Suspense>
+                </AnimatePresence>
               </div>
 
               {/* Recommendations column */}
-              <div className="lg:w-1/3">
-                <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
+              <AnimatePresence>
+                {!isDistractFree && (
                   <motion.div 
-                    className="sticky top-6 space-y-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
+                    initial={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="lg:w-1/3"
                   >
-                    {/* Desktop Recommendations */}
-                    <div className="hidden lg:block">
-                      <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-lg">
-                        <div className="p-4 border-b border-white/10">
-                          <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
+                    <Suspense fallback={<div className="h-96 bg-gray-800/40 animate-pulse rounded-lg" />}>
+                      <motion.div 
+                        className="sticky top-6 space-y-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        {/* Desktop Recommendations */}
+                        <div className="hidden lg:block">
+                          <div className="bg-black/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-lg">
+                            <div className="p-4 border-b border-white/10">
+                              <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
+                            </div>
+                            <div className="p-4">
+                              <Recommendations
+                                recommendations={recommendations}
+                                handleListItemClick={handleListItemClick}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-4">
-                          <Recommendations
-                            recommendations={recommendations}
-                            handleListItemClick={handleListItemClick}
-                          />
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Mobile Recommendations */}
-                    <div className="block lg:hidden">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                          <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
-                          <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="p-2 rounded-lg bg-[#02c39a]/10 text-[#02c39a] hover:bg-[#02c39a]/20 transition-colors"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </motion.button>
-                        </div>
-                        <motion.div 
-                          className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-black/40 
-                            backdrop-blur-sm rounded-xl border border-white/10 p-4"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ staggerChildren: 0.1 }}
-                        >
-                          {recommendations.slice(0, 6).map((item, index) => (
-                            <motion.div
-                              key={item.id}
-                              className="group relative flex flex-col gap-2 cursor-pointer"
-                              onClick={() => handleListItemClick(item)}
+                        {/* Mobile Recommendations */}
+                        <div className="block lg:hidden">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between px-2">
+                              <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
+                              <motion.button 
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="p-2 rounded-lg bg-[#02c39a]/10 text-[#02c39a] hover:bg-[#02c39a]/20 transition-colors"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </motion.button>
+                            </div>
+                            <motion.div 
+                              className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-black/40 
+                                backdrop-blur-sm rounded-xl border border-white/10 p-4"
                               initial={{ opacity: 0, y: 20 }}
                               animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              whileHover={{ scale: 1.05 }}
+                              transition={{ staggerChildren: 0.1 }}
                             >
-                              <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                                <img
-                                  src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-                                  data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                                  alt={item.title || item.name}
-                                  className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
-                                  loading="lazy"
-                                  onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                  <div className="absolute bottom-0 left-0 right-0 p-2">
-                                    <p className="text-xs text-white/90 text-center line-clamp-2">
-                                      {item.overview?.slice(0, 50)}...
-                                    </p>
+                              {recommendations.slice(0, 6).map((item, index) => (
+                                <motion.div
+                                  key={item.id}
+                                  className="group relative flex flex-col gap-2 cursor-pointer"
+                                  onClick={() => handleListItemClick(item)}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.1 }}
+                                  whileHover={{ scale: 1.05 }}
+                                >
+                                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                    <img
+                                      src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+                                      data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                                      alt={item.title || item.name}
+                                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                                      loading="lazy"
+                                      onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                      <div className="absolute bottom-0 left-0 right-0 p-2">
+                                        <p className="text-xs text-white/90 text-center line-clamp-2">
+                                          {item.overview?.slice(0, 50)}...
+                                        </p>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                              <motion.h3 
-                                className="text-sm font-medium text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                              >
-                                {item.title || item.name}
-                              </motion.h3>
+                                  <motion.h3 
+                                    className="text-sm font-medium text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                  >
+                                    {item.title || item.name}
+                                  </motion.h3>
+                                </motion.div>
+                              ))}
                             </motion.div>
-                          ))}
-                        </motion.div>
-                      </div>
-                    </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </Suspense>
                   </motion.div>
-                </Suspense>
-              </div>
+                )}
+              </AnimatePresence>
             </div>
-          </motion.div>
 
-          {/* Quick actions */}
-          <AnimatePresence>
-            {showQuickActions && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
-              >
-                <QuickActions
-                  isInWatchlist={isInWatchlist}
-                  isInFavorites={isInFavorites}
-                  handleWatchlistToggle={handleWatchlistToggle}
-                  handleFavoritesToggle={handleFavoritesToggle}
-                  showQuickActions={showQuickActions}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* User lists button */}
-          <div className="fixed bottom-4 sm:bottom-6 left-2 sm:left-6 z-[60] flex flex-col gap-2">
-            <motion.button
-              onClick={() => setShowUserLists(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`${buttonClasses.base} ${showUserLists
-                ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
-                : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
-                  : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
-              aria-label="Open user lists"
-            >
-              <div className="relative flex items-center justify-center">
-                <motion.svg
-                  animate={{ rotate: showUserLists ? 90 : 0 }}
-                  className="w-5 h-5 sm:w-6 sm:h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            {/* Quick actions */}
+            <AnimatePresence>
+              {showQuickActions && !isDistractFree && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="fixed bottom-0 left-0 right-0 z-[60] p-3 sm:p-6 bg-gradient-to-t from-[#0a1118] to-transparent"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16" 
+                  <QuickActions
+                    isInWatchlist={isInWatchlist}
+                    isInFavorites={isInFavorites}
+                    handleWatchlistToggle={handleWatchlistToggle}
+                    handleFavoritesToggle={handleFavoritesToggle}
+                    showQuickActions={showQuickActions}
                   />
-                </motion.svg>
-                <span className="hidden sm:inline ml-2 whitespace-nowrap">
-                  My Lists
-                </span>
-              </div>
-            </motion.button>
-          </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* User lists overlay */}
-          <AnimatePresence>
-            {showUserLists && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[65]"
-                onClick={() => setShowUserLists(false)}
+            {/* User lists button */}
+            <AnimatePresence>
+              {!isDistractFree && (
+                <div className="fixed bottom-4 sm:bottom-6 left-2 sm:left-6 z-[60] flex flex-col gap-2">
+                  <motion.button
+                    onClick={() => setShowUserLists(true)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`${buttonClasses.base} ${showUserLists
+                      ? 'bg-[#c3022b] text-white hover:bg-[#a80016] dark:bg-[#ff0336] dark:hover:bg-[#d4002d]'
+                      : isDarkMode ? 'bg-[#02c39a] text-white hover:bg-[#00a896] dark:bg-[#00edb8] dark:hover:bg-[#00c39a]'
+                        : `${lightModeStyles.buttonBg} ${lightModeStyles.buttonText}` } group relative xs:text-sm text-base sm:text-lg md:text-xl backdrop-blur-sm shadow-lg dark:shadow-black/50 w-full sm:w-auto`}
+                    aria-label="Open user lists"
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <motion.svg
+                        animate={{ rotate: showUserLists ? 90 : 0 }}
+                        className="w-5 h-5 sm:w-6 sm:h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2}
+                          d="M4 6h16M4 12h16M4 18h16" 
+                        />
+                      </motion.svg>
+                      <span className="hidden sm:inline ml-2 whitespace-nowrap">
+                        My Lists
+                      </span>
+                    </div>
+                  </motion.button>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* User lists overlay */}
+            <AnimatePresence>
+              {showUserLists && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[65]"
+                  onClick={() => setShowUserLists(false)}
+                />
+              )}
+            </AnimatePresence>
+
+            {/* User lists sidebar */}
+            <Suspense fallback={null}>
+              <UserListsSidebar
+                showUserLists={showUserLists}
+                setShowUserLists={setShowUserLists}
+                watchHistory={watchHistory}
+                watchlist={watchlist}
+                favorites={favorites}
+                handleListItemClick={handleListItemClick}
               />
-            )}
-          </AnimatePresence>
-
-          {/* User lists sidebar */}
-          <Suspense fallback={null}>
-            <UserListsSidebar
-              showUserLists={showUserLists}
-              setShowUserLists={setShowUserLists}
-              watchHistory={watchHistory}
-              watchlist={watchlist}
-              favorites={favorites}
-              handleListItemClick={handleListItemClick}
-            />
-          </Suspense>
+            </Suspense>
+          </motion.div>
         </ErrorBoundary>
       </div>
     </motion.div>
