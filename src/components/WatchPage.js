@@ -852,61 +852,88 @@ const WatchPage = () => {
                           <div className="space-y-4">
                             <div className="flex items-center justify-between px-2">
                               <h2 className="text-xl font-semibold text-white/90">Recommended For You</h2>
-                              <motion.button 
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="p-2 rounded-lg bg-[#02c39a]/10 text-[#02c39a] hover:bg-[#02c39a]/20 transition-colors"
-                              >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </motion.button>
                             </div>
-                            <motion.div 
-                              className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 bg-black/40 
-                                backdrop-blur-sm rounded-xl border border-white/10 p-4"
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ staggerChildren: 0.1 }}
-                            >
-                              {recommendations.slice(0, 6).map((item, index) => (
-                                <motion.div
-                                  key={item.id}
-                                  className="group relative flex flex-col gap-2 cursor-pointer"
-                                  onClick={() => handleListItemClick(item)}
+                            <div className="relative group">
+                              <motion.div 
+                                className="overflow-x-auto overflow-y-hidden scrollbar-none scroll-smooth snap-x snap-mandatory"
+                                id="mobile-recommendations-scroll"
+                              >
+                                <motion.div 
+                                  className="inline-flex gap-3 px-4 pb-4"
                                   initial={{ opacity: 0, y: 20 }}
                                   animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: index * 0.1 }}
-                                  whileHover={{ scale: 1.05 }}
+                                  transition={{ staggerChildren: 0.1 }}
                                 >
-                                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                                    <img
-                                      src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
-                                      data-src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                                      alt={item.title || item.name}
-                                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
-                                      loading="lazy"
-                                      onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                      <div className="absolute bottom-0 left-0 right-0 p-2">
-                                        <p className="text-xs text-white/90 text-center line-clamp-2">
-                                          {item.overview?.slice(0, 50)}...
-                                        </p>
+                                  {recommendations.map((item, index) => (
+                                    <motion.div
+                                      key={item.id}
+                                      className="group relative flex-none w-[160px] flex flex-col gap-2 cursor-pointer snap-start"
+                                      onClick={() => handleListItemClick(item)}
+                                      initial={{ opacity: 0, y: 20 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ delay: index * 0.1 }}
+                                      whileHover={{ scale: 1.05 }}
+                                    >
+                                      <div className="relative aspect-[2/3] rounded-lg overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                        <img
+                                          src={`https://image.tmdb.org/t/p/w300${item.poster_path}`}
+                                          alt={item.title || item.name}
+                                          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300"
+                                          loading="lazy"
+                                          onError={(e) => { e.target.src = '/fallback-poster.jpg' }}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                                            <p className="text-xs text-white/90 text-center line-clamp-2">
+                                              {item.overview?.slice(0, 50)}...
+                                            </p>
+                                          </div>
+                                        </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                  <motion.h3 
-                                    className="text-sm font-medium text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.2 }}
-                                  >
-                                    {item.title || item.name}
-                                  </motion.h3>
+                                      <motion.h3 
+                                        className="text-sm font-medium text-center text-white/80 line-clamp-1 group-hover:text-[#02c39a] transition-colors"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.2 }}
+                                      >
+                                        {item.title || item.name}
+                                      </motion.h3>
+                                    </motion.div>
+                                  ))}
                                 </motion.div>
-                              ))}
-                            </motion.div>
+                              </motion.div>
+
+                              {/* Scroll Buttons */}
+                              <button
+                                onClick={() => {
+                                  const container = document.getElementById('mobile-recommendations-scroll');
+                                  container.scrollBy({ left: -200, behavior: 'smooth' });
+                                }}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 bg-black/60 backdrop-blur-sm p-2 rounded-r-lg 
+                                  text-white/80 hover:text-white transition-colors z-10 opacity-0 group-hover:opacity-100
+                                  disabled:opacity-0 touch-manipulation"
+                                aria-label="Scroll left"
+                              >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const container = document.getElementById('mobile-recommendations-scroll');
+                                  container.scrollBy({ left: 200, behavior: 'smooth' });
+                                }}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 bg-black/60 backdrop-blur-sm p-2 rounded-l-lg 
+                                  text-white/80 hover:text-white transition-colors z-10 opacity-0 group-hover:opacity-100
+                                  disabled:opacity-0 touch-manipulation"
+                                aria-label="Scroll right"
+                              >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
