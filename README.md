@@ -57,7 +57,7 @@ Here's a breakdown of the key features, categorized for better readability:
 *   **⭐ User Reviews and Ratings:** Rate and review content, and view aggregated ratings from TMDB and other users. *(Future Enhancement)*
 *   **🤝 Social Sharing:** Share your favourite content on social media. *(Future Enhancement)*
 *   **🔄 Interactive Carousel:** Browse featured content with a visually appealing carousel (using `react-slick`).
-
+*   **Focus mode:**  Focus on the content by hiding the UI elements.
 **Technical Features:**
 
 *   **⚙️ PWA Support:**  Installable as a Progressive Web App for offline access and a native-like experience (powered by Workbox).
