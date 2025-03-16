@@ -1,6 +1,10 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useDarkMode } from './DarkModeContext';
 
 const EpisodeGrid = ({ type, mediaData, episodes, seasons, currentEpisode, handleInputChange }) => {
+  const { isDarkMode } = useDarkMode();
+
   if (type !== 'tv') return null;
 
   return (
@@ -29,14 +33,18 @@ const EpisodeGrid = ({ type, mediaData, episodes, seasons, currentEpisode, handl
 
       <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
         {episodes.map((episode) => (
-          <button
+          <motion.button
             key={episode.id}
             className={`relative group ${
               currentEpisode?.id === episode.id ? 'ring-2 ring-[#02c39a]' : ''
-            } rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 transition-colors`}
+            } rounded-lg overflow-hidden ${
+              isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-100'
+            } transition-colors`}
             onClick={() => handleInputChange({
               target: { name: 'episodeNo', value: episode.episode_number.toString() }
             })}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-900/40 backdrop-blur-sm">
               {episode.still_path ? (
@@ -47,8 +55,12 @@ const EpisodeGrid = ({ type, mediaData, episodes, seasons, currentEpisode, handl
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-gray-400">No Preview</span>
+                <div className={`w-full h-full flex items-center justify-center ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-gray-200'
+                }`}>
+                  <span className={`text-gray-400 ${isDarkMode ? 'text-white/40' : 'text-gray-400'}`}>
+                    No Preview
+                  </span>
                 </div>
               )}
               
@@ -63,7 +75,9 @@ const EpisodeGrid = ({ type, mediaData, episodes, seasons, currentEpisode, handl
 
             <div className="p-2 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-white/60 font-medium">
+                <span className={`text-xs font-medium ${
+                  isDarkMode ? 'text-white/90' : 'text-white'
+                }`}>
                   Episode {episode.episode_number}
                 </span>
                 {episode.vote_average > 0 && (
@@ -72,11 +86,13 @@ const EpisodeGrid = ({ type, mediaData, episodes, seasons, currentEpisode, handl
                   </span>
                 )}
               </div>
-              <h3 className="text-sm font-medium text-white/90 line-clamp-2 group-hover:text-[#02c39a] transition-colors">
+              <h3 className={`text-sm font-medium ${
+                isDarkMode ? 'text-white/90' : 'text-white'
+              } line-clamp-2 group-hover:text-[#02c39a] transition-colors`}>
                 {episode.name}
               </h3>
             </div>
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>

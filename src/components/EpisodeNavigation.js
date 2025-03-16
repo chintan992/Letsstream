@@ -2,15 +2,18 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { Tooltip } from 'react-tooltip';
+import { useDarkMode } from './DarkModeContext';
 
 const EpisodeNavigation = ({
   episodes,
   currentEpisodeNo,
   season,
   onEpisodeChange,
-  isDarkMode,
+  isDarkMode: parentIsDarkMode,
   isLoading
 }) => {
+  const { isDarkMode } = useDarkMode();
+  const actualIsDarkMode = parentIsDarkMode ?? isDarkMode;
   const currentEpisodeIndex = episodes.findIndex(ep => ep.episode_number === parseInt(currentEpisodeNo));
   const hasPrevious = currentEpisodeIndex > 0;
   const hasNext = currentEpisodeIndex < episodes.length - 1;
@@ -28,13 +31,13 @@ const EpisodeNavigation = ({
 
   return (
     <div className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 p-2 sm:p-3 rounded-lg ${
-      isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+      actualIsDarkMode ? 'bg-gray-800' : 'bg-gray-100'
     }`}>
       <motion.button
         onClick={handlePrevious}
         disabled={!hasPrevious || isLoading}
         className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
-          isDarkMode
+          actualIsDarkMode
             ? 'text-white hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent'
             : 'text-gray-800 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent'
         }`}
@@ -74,7 +77,7 @@ const EpisodeNavigation = ({
         onClick={handleNext}
         disabled={!hasNext || isLoading}
         className={`flex-1 sm:flex-initial flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 ${
-          isDarkMode
+          actualIsDarkMode
             ? 'text-white hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent'
             : 'text-gray-800 hover:bg-gray-200 disabled:opacity-40 disabled:hover:bg-transparent'
         }`}
