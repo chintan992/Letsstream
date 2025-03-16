@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useDarkMode } from './DarkModeContext';
 
 const Recommendations = ({ recommendations, handleListItemClick }) => {
+  const { isDarkMode } = useDarkMode();
+  
   const handleImageError = (e) => {
     e.target.src = '/fallback-poster.jpg';
   };
@@ -14,10 +17,10 @@ const Recommendations = ({ recommendations, handleListItemClick }) => {
       transition={{ staggerChildren: 0.1 }}
     >
       <div className="relative">
-        <div className="max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden 
+        <div className={`max-h-[calc(100vh-200px)] overflow-y-auto overflow-x-hidden 
           scrollbar-thin scrollbar-thumb-[#02c39a]/20 scrollbar-track-transparent 
           hover:scrollbar-thumb-[#02c39a]/40 sm:pr-2 pb-4
-          snap-y snap-mandatory scroll-smooth touch-pan-y"
+          snap-y snap-mandatory scroll-smooth touch-pan-y`}
         >
           <div className="grid grid-cols-2 gap-3 min-w-0">
             {recommendations.map((item, index) => (
@@ -42,7 +45,7 @@ const Recommendations = ({ recommendations, handleListItemClick }) => {
                     opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <div className="absolute bottom-0 left-0 right-0 p-2">
                       <motion.p 
-                        className="text-xs text-white/90 text-center line-clamp-2"
+                        className="text-xs text-white text-center line-clamp-2"
                         initial={{ opacity: 0, y: 10 }}
                         whileHover={{ opacity: 1, y: 0 }}
                       >
@@ -52,18 +55,19 @@ const Recommendations = ({ recommendations, handleListItemClick }) => {
                   </div>
                 </div>
                 <div className="space-y-0.5">
-                  <h3 className="text-xs font-medium text-white/80 line-clamp-1 group-hover:text-[#02c39a] 
-                    transition-colors"
+                  <h3 className={`text-xs font-medium ${
+                    isDarkMode ? 'text-white/80' : 'text-gray-800'
+                  } line-clamp-1 group-hover:text-[#02c39a] transition-colors`}
                   >
                     {item.title || item.name}
                   </h3>
                   {(item.release_date || item.first_air_date) && (
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[10px] text-white/60">
+                      <p className={`text-[10px] ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
                         {new Date(item.release_date || item.first_air_date).getFullYear()}
                       </p>
                       {item.vote_average > 0 && (
-                        <div className="flex items-center gap-0.5 text-[10px] text-white/60">
+                        <div className={`flex items-center gap-0.5 text-[10px] ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
                           <span>•</span>
                           <span className="text-[#02c39a]">{item.vote_average.toFixed(1)}</span>
                           <svg className="w-2.5 h-2.5 text-[#02c39a]" fill="currentColor" viewBox="0 0 20 20">

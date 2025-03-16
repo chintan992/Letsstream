@@ -24,12 +24,15 @@ const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const BASE_URL = process.env.REACT_APP_TMDB_BASE_URL;
 
 const lightModeStyles = {
-  containerBg: 'bg-white',
+  containerBg: 'bg-gray-50',
   textColor: 'text-gray-900',
   cardBg: 'bg-white',
   cardBorder: 'border border-gray-200',
   buttonBg: 'bg-blue-500 hover:bg-blue-600',
-  buttonText: 'text-white'
+  buttonText: 'text-white',
+  titleColor: 'text-gray-800',
+  secondaryText: 'text-gray-600',
+  tertiaryText: 'text-gray-500'
 };
 
 const WatchPage = () => {
@@ -66,8 +69,6 @@ const WatchPage = () => {
   const [similar, setSimilar] = useState([]);
   const [currentEpisode, setCurrentEpisode] = useState(null);
   const [episodeLayout, setEpisodeLayout] = useState('list'); // 'list' or 'grid'
-  const [showBackgroundPoster, setShowBackgroundPoster] = useState(false);
-  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isDistractFree, setIsDistractFree] = useState(false);
 
@@ -342,7 +343,6 @@ const WatchPage = () => {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      setShowBackgroundPoster(scrollPosition > 100);
       setShowQuickActions(scrollPosition > 200);
     };
     window.addEventListener('scroll', handleScroll);
@@ -384,25 +384,6 @@ const WatchPage = () => {
     fetchAdditionalData();
   }, [type, id]);
 
-  useEffect(() => {
-    const checkDevicePerformance = () => {
-      // Check if device is low-end based on memory and CPU cores
-      if ('deviceMemory' in navigator || 'hardwareConcurrency' in navigator) {
-        const lowMemory = navigator.deviceMemory < 4;
-        const lowCPU = navigator.hardwareConcurrency < 4;
-        setIsLowEndDevice(lowMemory || lowCPU);
-      } else {
-        // Fallback to user agent check for mobile devices
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-        setIsLowEndDevice(isMobile);
-      }
-    };
-
-    checkDevicePerformance();
-  }, []);
-
   // Add fullscreen detection
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -442,8 +423,6 @@ const WatchPage = () => {
     window.addEventListener('orientationchange', handleOrientationChange);
     return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
-
-  const shouldShowBackgroundPoster = !isLowEndDevice && showBackgroundPoster;
 
   if (isLoading) {
     return (
@@ -525,30 +504,6 @@ const WatchPage = () => {
       exit="exit"
       variants={pageTransition}
     >
-      {/* Background Poster - Now conditional based on device performance */}
-      {item?.poster_path && shouldShowBackgroundPoster && (
-        <motion.div 
-          className={`fixed inset-0 z-0 transition-opacity duration-500 ${
-            showBackgroundPoster ? 'opacity-70' : 'opacity-0'
-          }`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showBackgroundPoster ? 0.7 : 0 }}
-          style={{
-            background: `linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(10,17,24,0.9) 50%, rgba(10,17,24,1) 100%)`,
-          }}
-        >
-          <motion.img
-            data-src={`https://image.tmdb.org/t/p/original${item.backdrop_path || item.poster_path}`}
-            alt=""
-            className="w-full h-full object-cover object-center blur-md"
-            loading="lazy"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showBackgroundPoster ? 1 : 0, blur: showBackgroundPoster ? 10 : 0 }}
-            transition={{ duration: 0.5 }}
-          />
-        </motion.div>
-      )}
-
       {/* Main Content */}
       <div className="relative z-10 px-2 sm:px-4 md:px-6 lg:px-8">
         <ErrorBoundary>
@@ -571,11 +526,20 @@ const WatchPage = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="flex flex-col gap-4 mb-6"
                     >
-                      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white/90">
+                      <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white/90' : lightModeStyles.titleColor}`}>
                         {item?.title || item?.name}
+                        <span className={`ml-3 text-lg sm:text-xl md:text-2xl font-normal ${isDarkMode ? 'text-white/60' : lightModeStyles.secondaryText}`}>
+                          {item?.release_date?.slice(0, 4) || item?.first_air_date?.slice(0, 4)}
+                          {item?.vote_average && (
+                            <span className="ml-3">
+                              <span className="text-yellow-500">★</span>{' '}
+                              {item.vote_average.toFixed(1)}
+                            </span>
+                          )}
+                        </span>
                       </h1>
                       {item?.tagline && (
-                        <p className="text-lg sm:text-xl text-white/70 italic">
+                        <p className={`text-lg sm:text-xl italic ${isDarkMode ? 'text-white/70' : lightModeStyles.tertiaryText}`}>
                           {item.tagline}
                         </p>
                       )}
@@ -621,8 +585,11 @@ const WatchPage = () => {
                   className="mb-2 sm:mb-4 relative z-[70]"
                   variants={itemVariants}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-black/40 
-                    backdrop-blur-sm rounded-lg p-2 sm:p-3 border border-white/10">
+                  <div className={`flex flex-wrap items-center justify-between gap-2 sm:gap-3 ${
+                    isDarkMode ? 'bg-black/40 backdrop-blur-sm' : 'bg-white shadow-md'
+                  } rounded-lg p-2 sm:p-3 ${
+                    isDarkMode ? 'border border-white/10' : 'border border-gray-200'
+                  }`}>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                       <div className="w-full sm:w-auto min-w-[120px]">
                         <SourceSelector
