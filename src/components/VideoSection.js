@@ -40,22 +40,7 @@ const VideoSection = React.forwardRef(({ mediaData, isVideoReady, onSubmit, ifra
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const handleFullscreenToggle = async () => {
-    try {
-      if (!document.fullscreenElement) {
-        const container = ref.current;
-        if (container) {
-          await container.requestFullscreen();
-          container.style.width = '100vw';
-          container.style.height = '100vh';
-        }
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (error) {
-      console.error('Fullscreen error:', error);
-    }
-  };
+
 
   useEffect(() => {
     const currentIframe = iframeRef?.current;
