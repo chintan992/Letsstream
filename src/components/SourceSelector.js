@@ -60,8 +60,8 @@ const SourceSelector = ({ videoSource, handleSourceChange, showSourceMenu, setSh
             {showSourceMenu && (
                 <div 
                     ref={dropdownRef} 
-                    className="absolute mt-2 w-full rounded-lg bg-white/10 dark:bg-gray-800/90 backdrop-blur-md 
-                        shadow-lg border border-white/10 dark:border-gray-700/30 z-50 max-h-[50vh] overflow-y-auto" 
+                    className="absolute mt-2 w-48 rounded-lg bg-white/10 dark:bg-gray-800/90 backdrop-blur-md 
+                        shadow-lg border border-white/10 dark:border-gray-700/30 z-50" 
                     role="menu"
                 >
                     {Object.entries(VIDEO_SOURCES).map(([key, { name, quality }]) => (
@@ -78,7 +78,7 @@ const SourceSelector = ({ videoSource, handleSourceChange, showSourceMenu, setSh
                             role="menuitem"
                             tabIndex="0"
                         >
-                            <span className="truncate pr-2">{name}</span>
+                            <span className="pr-2">{name}</span> {/* Removed truncate */}
                             <span className="text-xs text-white/60 whitespace-nowrap">{quality}</span>
                         </button>
                     ))}

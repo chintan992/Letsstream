@@ -17,7 +17,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="relative z-10 mt-auto backdrop-blur-sm" role="contentinfo" aria-label="Site footer">
+    <footer className="relative z-5 mt-auto backdrop-blur-sm" role="contentinfo" aria-label="Site footer">
       <div className="bg-gray-100/80 dark:bg-[#000e14]/80">
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

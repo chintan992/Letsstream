@@ -582,7 +582,7 @@ const WatchPage = () => {
 
                 {/* Source selector and controls */}
                 <motion.div 
-                  className="mb-2 sm:mb-4 relative z-[70]"
+                  className="mb-2 sm:mb-4 relative z-[100]"
                   variants={itemVariants}
                 >
                   <div className={`flex flex-wrap items-center justify-between gap-2 sm:gap-3 ${
