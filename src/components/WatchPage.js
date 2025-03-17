@@ -1,3 +1,4 @@
+//src/components/WatchPage.js
 import React, { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDarkMode } from './DarkModeContext';
@@ -60,7 +61,7 @@ const WatchPage = () => {
   });
   const iframeRef = useRef(null);
   const [videoSource, setVideoSource] = useState(() => getStoredVideoSource() || 'multiembed');
-  const [showSourceMenu, setShowSourceMenu] = useState(false);
+//const [showSourceMenu, setShowSourceMenu] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const contentRef = useRef(null);
   const [cast, setCast] = useState([]);
@@ -592,12 +593,11 @@ const WatchPage = () => {
                   }`}>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                       <div className="w-full sm:w-auto min-w-[120px]">
-                        <SourceSelector
-                          videoSource={videoSource}
-                          handleSourceChange={handleSourceChange}
-                          showSourceMenu={showSourceMenu}
-                          setShowSourceMenu={setShowSourceMenu}
-                        />
+                      <SourceSelector
+                        videoSource={videoSource}
+                        handleSourceChange={handleSourceChange}
+                      />
+
                       </div>
 <div className="flex items-center gap-2 w-full sm:w-auto">
   <button
