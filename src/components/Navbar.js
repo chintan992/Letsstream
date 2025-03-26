@@ -114,6 +114,18 @@ const Navbar = () => {
                   </Link>
                 );
               })}
+              <a
+                href="https://letsstream2.pages.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`px-4 py-2 rounded-md font-medium transition-all duration-200 animate-pulse hover:animate-none ${
+                  isDarkMode
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                Try V2.0 ✨
+              </a>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -280,6 +292,18 @@ const Navbar = () => {
                   </Link>
                 );
               })}
+              <a
+                href="https://letsstream2.pages.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-all duration-200 text-center ${
+                  isDarkMode
+                    ? 'bg-green-500 text-white hover:bg-green-600'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                Try V2.0 ✨
+              </a>
             </div>
           </div>
         )}
